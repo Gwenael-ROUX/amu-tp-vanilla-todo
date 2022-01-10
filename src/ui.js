@@ -1,11 +1,45 @@
-// src/ui.js
+// On importe dans notre module principal des fonctions en provenance
+// du module api.js
+import {
+    loadTodoItemsFromApi,
+    toggleComplete,
+    saveTodoItemToApi,
+    loadTodoItemFromApi
+  } from "./api.js";
 
-/**
- * Permet d'ajouter visuellement une tâche dans l'interface
- * @param {{id: number, text: string, done: boolean}} item
- */
- const addTodo = (item) => {
-    // Code d'ajout d'une tâche dans l'interface
+  import { onClickLink } from "./routing";
+
+
+  /**
+   * Permet d'ajouter visuellement une tâche dans l'interface
+   * @param {{id: number, text: string, done: boolean}} item
+   */
+   const addTodo = (item) => {
+    // On récupère le <ul>
+    const container = document.querySelector("ul");
+  
+    // On intègre le HTML de la tâche à la fin du <ul>
+    container.insertAdjacentHTML(
+      "beforeend",
+      `
+          <li>
+              <label>
+                  <input type="checkbox" id="todo-${item.id}" ${item.done ? "checked" : ""} /> 
+                  ${item.text}
+              </label>
+              <a id="goto-${item.id}" href="/${item.id}/details">Détails</a>
+          </li>
+      `
+    );
+  
+    // Alors que la tâche a été ajoutée, on attache au click sur la checkbox la fonction onClickCheckbox
+    document
+      .querySelector("input#todo-" + item.id)
+      .addEventListener("click", onClickCheckbox);
+
+    document
+      .querySelector('a#goto-' + item.id)
+      .addEventListener('click', onClickLink);
   };
   
   /**
@@ -38,7 +72,6 @@
    */
   const onSubmitForm = (e) => {
     // Gestion de la soumission du formulaire
-    document.querySelector("form").addEventListener("submit", (e) => {
         // On annule le comportement par défaut de la soumission 
         // (qui aurait pour effet de recharger la page, ce qu'on ne souhaite pas vu qu'on souhaite gérer nous-même le comportement)
         e.preventDefault();
@@ -63,7 +96,6 @@
         input.value = "";
         input.focus();
         });
-    });
   };
   
   /**
@@ -88,3 +120,25 @@
       e.target.checked = isDone;
     });
   };
+
+  /**
+ * Affiche dans l'interface le détails d'une tâche
+ * @param {number} id 
+ */
+export const displayTodoDetails = (id) => {
+    // On appelle l'API afin de récupérer une tâche
+    loadTodoItemFromApi(id).then((item) => {
+        // On injecte du HTML dans le <main> 
+        // (supprimant donc ce qu'il contient à ce stade)
+        document.querySelector("main").innerHTML = `
+                <h2>Détails de la tâche ${item.id}</h2>
+                <p><strong>Texte :</strong> ${item.text}</p>
+                <p><strong>Status : </strong> ${item.done ? "Complété" : "A faire"}</p>
+                <a id="back" href="/">Retour à la liste</a>
+            `;
+        
+        // On n'oublie pas que le lien doit être géré par le routeur
+        document.querySelector('a#back')
+            .addEventListener('click', onClickLink);
+    });
+};
